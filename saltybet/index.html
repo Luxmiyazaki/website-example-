@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Salty Brawl – watch AI fighters brawl and bet play money on who wins.">
+  <meta name="theme-color" content="#121218">
+  <title>Salty Brawl</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23121218'/%3E%3Cpath d='M32 8 52 20v24L32 56 12 44V20z' fill='%23ffd23f'/%3E%3Ctext x='32' y='42' font-size='26' text-anchor='middle' font-family='Arial Black,Arial' font-weight='900' fill='%23121218'%3E$%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Salty Brawl home">
+      <span class="brand-salty">SALTY</span><span class="brand-brawl">BRAWL</span>
+    </a>
+    <nav class="nav">
+      <button type="button" data-dialog="leaderboard">Leaderboard</button>
+      <button type="button" data-dialog="compendium">Compendium</button>
+      <button type="button" data-dialog="help">FAQ</button>
+    </nav>
+    <div class="account">
+      <span id="modeBadge" class="mode-badge">…</span>
+      <button type="button" id="soundBtn" class="icon-btn" title="Sound on/off" aria-label="Toggle sound">🔇</button>
+      <button type="button" id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">⚙️</button>
+      <div class="wallet" id="wallet">
+        <div class="wallet-name"><span id="playerName">…</span> <span id="rankBadge" class="rank-badge" title="Rank"></span></div>
+        <div class="wallet-money">
+          <span id="balance" class="balance">$0</span>
+          <span id="tbalance" class="tbalance hidden" title="Tournament balance"></span>
+        </div>
+      </div>
+      <button type="button" id="loginBtn" class="login-btn hidden">Sign up to bet</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="main-col">
+      <div class="stream-wrap">
+        <canvas id="stream" width="960" height="540" aria-label="Live fight stream"></canvas>
+        <div class="conn-lost hidden" id="connLost">Connection lost – reconnecting…</div>
+      </div>
+
+      <div class="betpanel" id="betpanel">
+        <div class="betrow">
+          <button type="button" id="betRed" class="betbtn red" disabled>
+            <span class="bb-top">Bet on</span>
+            <span class="bb-name" id="redName">Player 1</span>
+            <span class="bb-sub" id="redSub"></span>
+          </button>
+          <div class="wager">
+            <label class="wager-box" for="wager">
+              <span>$</span>
+              <input id="wager" type="text" inputmode="numeric" autocomplete="off" placeholder="Wager" maxlength="14">
+            </label>
+            <div class="quick">
+              <button type="button" data-pct="0.1">10%</button>
+              <button type="button" data-pct="0.25">25%</button>
+              <button type="button" data-pct="0.5">50%</button>
+              <button type="button" data-pct="1" class="allin">ALL IN</button>
+            </div>
+          </div>
+          <button type="button" id="betBlue" class="betbtn blue" disabled>
+            <span class="bb-top">Bet on</span>
+            <span class="bb-name" id="blueName">Player 2</span>
+            <span class="bb-sub" id="blueSub"></span>
+          </button>
+        </div>
+        <div class="statusbar">
+          <div class="timer"><div id="timerFill"></div></div>
+          <div class="status-line">
+            <span id="betStatus" class="bet-status">Connecting…</span>
+            <span id="oddsBox" class="odds hidden"></span>
+          </div>
+          <div id="myBet" class="mybet"></div>
+        </div>
+        <div id="modeText" class="modetext"></div>
+      </div>
+
+      <div class="cards">
+        <article class="fcard red" id="cardRed"></article>
+        <article class="fcard blue" id="cardBlue"></article>
+      </div>
+
+      <div class="bettors">
+        <div class="bcol red">
+          <h3><span>Team Red</span><span id="redPot" class="pot"></span></h3>
+          <ol id="redList"></ol>
+        </div>
+        <div class="bcol blue">
+          <h3><span>Team Blue</span><span id="bluePot" class="pot"></span></h3>
+          <ol id="blueList"></ol>
+        </div>
+        <p id="bettorsHidden" class="bettors-hidden">Bets stay secret until betting closes.</p>
+      </div>
+
+      <div class="history">
+        <h3>Recent results</h3>
+        <div id="history" class="history-list"></div>
+      </div>
+    </section>
+
+    <aside class="chat">
+      <div class="chat-head">
+        <span>Stream chat</span>
+        <span id="chatCount" class="chat-count"></span>
+      </div>
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
+      <form id="chatForm" class="chat-form" autocomplete="off">
+        <input id="chatInput" maxlength="200" placeholder="Send a message">
+        <button type="submit">Chat</button>
+      </form>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    Salty Brawl is a just-for-fun betting game with play money ("Salt"). No real money, no prizes.
+  </footer>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <dialog id="dlg-leaderboard" class="dlg">
+    <div class="dlg-head"><h2>Leaderboard</h2><button type="button" class="dlg-x" aria-label="Close">✕</button></div>
+    <div class="dlg-body">
+      <p id="lbMe" class="muted"></p>
+      <table class="table"><thead><tr><th>#</th><th>Name</th><th>Rank</th><th class="num">Balance</th><th class="num">W-L</th></tr></thead><tbody id="lbBody"></tbody></table>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-compendium" class="dlg wide">
+    <div class="dlg-head"><h2>Compendium</h2><button type="button" class="dlg-x" aria-label="Close">✕</button></div>
+    <div class="dlg-body">
+      <div class="filters">
+        <input id="cmpSearch" placeholder="Search characters…">
+        <select id="cmpTier" aria-label="Tier filter">
+          <option value="">All tiers</option>
+          <option value="X">X tier</option><option value="S">S tier</option><option value="A">A tier</option>
+          <option value="B">B tier</option><option value="P">P tier</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="table"><thead><tr><th>Tier</th><th>Name</th><th class="num">W</th><th class="num">L</th><th class="num">Win%</th><th class="num">Elo</th><th class="num">Streak</th><th>Special / Super</th></tr></thead><tbody id="cmpBody"></tbody></table>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-help" class="dlg">
+    <div class="dlg-head"><h2>How Salty Brawl works</h2><button type="button" class="dlg-x" aria-label="Close">✕</button></div>
+    <div class="dlg-body prose">
+      <p><b>AI fighters brawl non-stop.</b> Nobody controls them. Before every match, betting is open for a short time: pick <span class="red-t">Red</span> or <span class="blue-t">Blue</span>, type in a wager and hit the button. You get one bet per match.</p>
+      <p><b>Payouts are parimutuel.</b> When bets lock, both pots are revealed. If your side wins you get your wager back plus your share of the losing pot:<br><code>winnings = wager × (losing pot ÷ winning pot)</code><br>Betting on the underdog pays a lot more. That's where the salt comes from.</p>
+      <p><b>Bailouts.</b> You start with $400. If you go broke you get bailed out to $100 at the next match. Higher ranks get a bigger bailout.</p>
+      <p><b>Game modes.</b> 100 <i>matchmaking</i> matches (fighters of the same tier), then a 16-character <i>tournament</i>, then 25 <i>exhibition</i> matches (anyone vs anyone), then it starts over.</p>
+      <p><b>Tournaments</b> use a separate tournament balance ($1,000 + your rank bonus). You can't drop below it, so going all in costs nothing. When the tournament ends, everything you won on top of it goes into your real balance.</p>
+      <p><b>Tiers:</b> <span class="tier t-X">X</span> broken, <span class="tier t-S">S</span>, <span class="tier t-A">A</span>, <span class="tier t-B">B</span>, <span class="tier t-P">P</span> potato. If a fighter wins 8 of its last 10 matchmaking matches it moves up a tier. If it loses 8 of 10 it moves down.</p>
+      <p><b>Ranks</b> go up with the number of matches you've bet on (25, 50, 75, 100, 150, …). Each rank raises your bailout and tournament balance.</p>
+      <p><b>Stats:</b> the cards under the stream show every fighter's record, win streak, Elo and base stats. Use them.</p>
+      <p class="muted">Solo mode runs entirely in your browser and saves your progress. When the site is started with <code>npm start</code>, it runs in online mode instead: everyone connected watches the same fights, bets into the same pots and shares the chat.</p>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-settings" class="dlg">
+    <div class="dlg-head"><h2>Settings</h2><button type="button" class="dlg-x" aria-label="Close">✕</button></div>
+    <div class="dlg-body">
+      <form id="renameForm" class="row-form">
+        <label for="renameInput">Display name</label>
+        <div class="row"><input id="renameInput" maxlength="16" placeholder="Your name"><button type="submit">Save</button></div>
+      </form>
+      <div id="soloSettings">
+        <label class="check"><input type="checkbox" id="turboToggle"> Turbo mode (shorter betting window, double speed fights)</label>
+        <button type="button" id="resetBtn" class="danger">Reset solo progress</button>
+      </div>
+      <div id="onlineSettings" class="hidden">
+        <button type="button" id="logoutBtn" class="danger">Log out on this device</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-register" class="dlg">
+    <div class="dlg-head"><h2>Join the Salt Mine</h2><button type="button" class="dlg-x" aria-label="Close">✕</button></div>
+    <div class="dlg-body">
+      <p>Choose a name. You start with <b>$400</b> in Salt. No password needed. You stay logged in on this device.</p>
+      <form id="registerForm" class="row-form">
+        <div class="row"><input id="registerName" maxlength="16" placeholder="3-16 letters, numbers, _" required><button type="submit">Start betting</button></div>
+        <p id="registerError" class="error"></p>
+      </form>
+    </div>
+  </dialog>
+
+  <script src="js/core/rng.js"></script>
+  <script src="js/core/roster.js"></script>
+  <script src="js/core/fight.js"></script>
+  <script src="js/core/league.js"></script>
+  <script src="js/client/audio.js"></script>
+  <script src="js/client/render.js"></script>
+  <script src="js/client/feeds.js"></script>
+  <script src="js/client/app.js"></script>
+</body>
+</html>

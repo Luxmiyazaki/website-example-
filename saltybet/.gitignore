@@ -1,0 +1,4 @@
+# online-mode save file (contains login tokens)
+data/
+node_modules/
+*.log

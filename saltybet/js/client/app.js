@@ -495,6 +495,25 @@
       });
   }
 
+  // Two-step confirmation inside the page (browser confirm() dialogs are
+  // blocked in some embeds): the first click arms the button for 4 seconds.
+  function confirmClick(btn, armedText, action) {
+    const label = btn.textContent;
+    let timer = null;
+    btn.addEventListener('click', function () {
+      if (btn.classList.contains('armed')) {
+        clearTimeout(timer);
+        btn.classList.remove('armed');
+        btn.textContent = label;
+        action();
+        return;
+      }
+      btn.classList.add('armed');
+      btn.textContent = armedText;
+      timer = setTimeout(function () { btn.classList.remove('armed'); btn.textContent = label; }, 4000);
+    });
+  }
+
   function row(cells, classes) {
     const tr = document.createElement('tr');
     cells.forEach(function (c, i) {
@@ -553,11 +572,9 @@
       feed.setTurbo(e.target.checked);
       toast(e.target.checked ? 'Turbo on – starts with the next match.' : 'Turbo off – starts with the next match.', '');
     });
-    $('#resetBtn').addEventListener('click', function () {
-      if (confirm('Reset your balance, all fighter records and the bots? This cannot be undone.')) feed.reset();
-    });
-    $('#logoutBtn').addEventListener('click', function () {
-      if (confirm('Log out? Your account can only be recovered on this device.')) { feed.logout(); closeDialog($('#dlg-settings')); state.me = null; renderAll(); }
+    confirmClick($('#resetBtn'), 'Click again to reset everything', function () { feed.reset(); });
+    confirmClick($('#logoutBtn'), 'Click again to log out (only this device can log back in)', function () {
+      feed.logout(); closeDialog($('#dlg-settings')); state.me = null; renderAll();
     });
     $('#registerForm').addEventListener('submit', function (e) {
       e.preventDefault();
